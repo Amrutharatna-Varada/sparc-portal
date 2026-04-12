@@ -50,8 +50,10 @@ export default function Login() {
                 <div className="login-header">
 
   <div className="brand-row">
-    <div className="logo-box">SP</div>
-    <h1 className="brand-title">SPARC Portal</h1>
+    <div className="logo-wrapper">
+  <img src="/logo-sp.jpeg" className="logo-img" />
+</div>
+    <h1 className="brand-title">SP Portal</h1>
   </div>
 
   <p className="login-sub">

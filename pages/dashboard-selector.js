@@ -23,13 +23,15 @@ export default function ClientHome() {
       {/* HEADER */}
       <div className="header">
         <div className="brand">
-          <div className="logo-box">SP</div>
-          <span>SPARC Portal</span>
+          <div className="logo-wrapper">
+  <img src="/logo-sp.jpeg" className="logo-img" />
+</div>
+          <span className="brand-title">SP Portal</span>
         </div>
 
         <div className="header-actions">
           <button className="btn" onClick={() => router.push("/admin")}>
-            Back
+            Back to Admin Home
           </button>
 
           <button className="btn" onClick={() => signOut(auth)}>

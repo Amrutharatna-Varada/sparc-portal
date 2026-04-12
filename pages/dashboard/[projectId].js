@@ -8,49 +8,56 @@ import {
   getDocs,
   orderBy
 } from "firebase/firestore";
-import {onAuthStateChanged} from "firebase/auth"
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function ProjectDashboard() {
   const router = useRouter();
   const { projectId } = router.query;
 
   const [files, setFiles] = useState([]);
-  const [selected, setSelected] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(null);
+
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [touchEndX, setTouchEndX] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const isFirst = selectedIndex === 0;
+  const isLast = selectedIndex === files.length - 1;
 
   useEffect(() => {
-  const unsub = onAuthStateChanged(auth, async (user) => {
-    if (!user) return router.push("/");
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) return router.push("/");
 
-    const q = query(
-      collection(db, "users"),
-      where("email", "==", user.email)
-    );
+      const q = query(
+        collection(db, "users"),
+        where("email", "==", user.email)
+      );
 
-    const snap = await getDocs(q);
+      const snap = await getDocs(q);
 
-    if (snap.empty) return router.push("/");
+      if (snap.empty) return router.push("/");
 
-    const userData = snap.docs[0].data();
+      const userData = snap.docs[0].data();
 
-    // 🔥 ADMIN → allow all dashboards
-    if (userData.role === "admin") {
-      return; // allow access
-    }
+      if (userData.role === "admin") {
+        setIsAdmin(true);
+        return;
+      }
 
-    // 🔒 CLIENT → restrict to their project only
-    if (userData.projectId !== projectId) {
-      return router.push(`/dashboard/${userData.projectId}`);
-    }
+      if (userData.projectId !== projectId) {
+        return router.push(`/dashboard/${userData.projectId}`);
+      }
+    });
 
-  });
-
-  return () => unsub();
-}, []);
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     if (!projectId) return;
 
     const fetchData = async () => {
+        setLoading(true)
       const q = query(
         collection(db, "updates"),
         where("projectId", "==", projectId),
@@ -59,12 +66,13 @@ export default function ProjectDashboard() {
       );
 
       const snap = await getDocs(q);
-      const data = snap.docs.map(doc => ({
+      const data = snap.docs.map((doc) => ({
         id: doc.id,
         ...doc.data()
       }));
 
       setFiles(data);
+      setLoading(false);
     };
 
     fetchData();
@@ -74,16 +82,86 @@ export default function ProjectDashboard() {
     router.push("/login");
   };
 
+  const next = () => {
+    setSelectedIndex((prev) =>
+      prev === files.length - 1 ? prev : prev + 1
+    );
+  };
+
+  const prev = () => {
+    setSelectedIndex((prev) =>
+      prev === 0 ? prev : prev - 1
+    );
+  };
+
+  // 🔥 GROUPING LOGIC (NEW)
+  const groupFiles = () => {
+  const groups = {};
+
+  files.forEach((file) => {
+    if (!file.createdAt) return;
+
+    const date = new Date(file.createdAt.seconds * 1000);
+
+    const key = date.toLocaleString("default", {
+      month: "long",
+      year: "numeric"
+    });
+
+    if (!groups[key]) groups[key] = [];
+
+    groups[key].push(file);
+  });
+
+  return groups;
+};
+
+  const groupedFiles = groupFiles();
+
+  // 👉 Swipe handlers
+  const handleTouchStart = (e) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    const distance = touchStartX - touchEndX;
+    const minSwipeDistance = 50;
+
+    if (distance > minSwipeDistance && !isLast) next();
+    else if (distance < -minSwipeDistance && !isFirst) prev();
+  };
+
   return (
     <div className="dashboard">
+
       {/* HEADER */}
       <div className="header">
-        <h1>{projectId} Updates</h1>
+        <div className="brand">
+          <div className="logo-wrapper">
+            <img src="/logo-sp.jpeg" className="logo-img" />
+          </div>
+          <span className="brand-title">SP Portal</span>
+        </div>
 
         <div className="actions">
+          {isAdmin && (
+            <button
+              className="btn-outline"
+              onClick={() => router.push("/dashboard-selector")}
+            >
+              Back to Projects
+            </button>
+          )}
+
           <button
             className="btn-outline"
-            onClick={() => router.push(`/project-details/${projectId}`)}
+            onClick={() =>
+              router.push(`/project-details/${projectId}`)
+            }
           >
             Project Details
           </button>
@@ -94,43 +172,86 @@ export default function ProjectDashboard() {
         </div>
       </div>
 
-      {/* GRID */}
-      <div className="grid">
-        {files.map((item) => {
-          const isVideo = item.fileUrl?.includes(".mp4");
+      <h2 className="title">{projectId} Updates</h2>
 
-          return (
-            <div
-              key={item.id}
-              className="card"
-              onClick={() => setSelected(item)}
-            >
-              {isVideo ? (
-                <video src={item.fileUrl} />
-              ) : (
-                <img src={item.fileUrl} alt="" />
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {loading && (
+  <div className="dashboard-grid">
+    {[...Array(8)].map((_, i) => (
+      <div key={i} className="skeleton-card" />
+    ))}
+  </div>
+)}
 
-      {/* EMPTY STATE */}
-      {files.length === 0 && (
-        <p className="empty">No updates yet</p>
-      )}
+      {/* 🔥 GROUPED GRID */}
+      {Object.entries(groupedFiles).map(([label, items]) => (
+        <div key={label}>
 
-      {/* MODAL */}
-      {selected && (
-        <div className="modal" onClick={() => setSelected(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            {selected.fileUrl.includes(".mp4") ? (
-              <video src={selected.fileUrl} controls />
-            ) : (
-              <img src={selected.fileUrl} />
+          {/* 🔥 STICKY HEADER */}
+          <div className="sticky-header">{label}</div>
+
+          <div className="grid">
+            {items.map((item) => {
+              const index = files.indexOf(item);
+              const isVideo = item.fileUrl?.includes(".mp4");
+
+              return (
+                <div
+                  key={item.id}
+                  className="card"
+                  onClick={() => setSelectedIndex(index)}
+                >
+                  {isVideo ? (
+                    <video src={item.fileUrl} />
+                  ) : (
+                    <img src={item.fileUrl} loading="lazy" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+      ))}
+
+      {!loading && files.length === 0 && (
+  <div className="empty-state">
+    <div className="empty-icon">📁</div>
+    <h3>No updates yet</h3>
+    <p>Project updates will appear here once uploaded</p>
+  </div>
+)}
+
+      {/* MODAL (UNCHANGED) */}
+      {selectedIndex !== null && files[selectedIndex] && (
+        <div
+          className="modal"
+          onClick={() => setSelectedIndex(null)}
+        >
+          <div
+            className="modal-content gallery"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {!isFirst && (
+              <button className="nav left" onClick={prev}>‹</button>
             )}
 
-            <button className="close-btn" onClick={() => setSelected(null)}>
+            {files[selectedIndex]?.fileUrl?.includes(".mp4") ? (
+              <video src={files[selectedIndex]?.fileUrl} controls autoPlay />
+            ) : (
+              <img src={files[selectedIndex]?.fileUrl} />
+            )}
+
+            {!isLast && (
+              <button className="nav right" onClick={next}>›</button>
+            )}
+
+            <button
+              className="close-btn"
+              onClick={() => setSelectedIndex(null)}
+            >
               ✕
             </button>
           </div>

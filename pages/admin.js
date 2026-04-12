@@ -31,8 +31,10 @@ export default function Admin() {
 
       <div className="admin-header">
         <div className="brand">
-          <div className="logo-box">SP</div>
-          <span>SPARC Portal</span>
+          <div className="logo-wrapper">
+  <img src="/logo-sp.jpeg" className="logo-img" />
+</div>
+          <span className="brand-title">SP Portal</span>
         </div>
 
         <button className="btn-outline" onClick={() => signOut(auth)}>

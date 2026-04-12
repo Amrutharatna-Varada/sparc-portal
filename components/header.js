@@ -7,7 +7,7 @@ export default function Header({ title, right }) {
 
       <div className="brand">
         <div className="logo-box">SP</div>
-        <span>SPARC Portal</span>
+        <span>SP Portal</span>
       </div>
 
       <h3 className="page-title">{title}</h3>

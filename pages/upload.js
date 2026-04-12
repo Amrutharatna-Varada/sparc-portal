@@ -8,7 +8,12 @@ import { useRouter } from "next/router";
 export default function Upload() {
   const [projects, setProjects] = useState([]);
   const [projectId, setProjectId] = useState("");
+
   const [category, setCategory] = useState("daily-updates");
+
+  const [mainCategory, setMainCategory] = useState("");
+  const [subCategory, setSubCategory] = useState("");
+
   const [file, setFile] = useState(null);
 
   const router = useRouter();
@@ -25,17 +30,33 @@ export default function Upload() {
   const upload = async () => {
     if (!file || !projectId) return alert("Missing fields");
 
-    if (category === "daily-updates" && file.type === "application/pdf") {
-      return alert("PDF not allowed in daily updates");
+    // 🔥 validation
+    if (category === "project-details") {
+      if (!mainCategory) return alert("Select section");
+
+      if (mainCategory === "drawings" && !subCategory) {
+        return alert("Select drawing type");
+      }
     }
 
-    const storageRef = ref(storage, `projects/${projectId}/${Date.now()}-${file.name}`);
+    const storageRef = ref(
+      storage,
+      `projects/${projectId}/${Date.now()}-${file.name}`
+    );
+
     await uploadBytes(storageRef, file);
     const url = await getDownloadURL(storageRef);
 
     await addDoc(collection(db, "updates"), {
       projectId,
       category,
+
+      mainCategory: category === "project-details" ? mainCategory : null,
+      subCategory:
+        category === "project-details" && mainCategory === "drawings"
+          ? subCategory
+          : null,
+
       fileUrl: url,
       fileType: file.type,
       fileName: file.name,
@@ -49,16 +70,17 @@ export default function Upload() {
   return (
     <div className="upload-page">
 
-      {/* 🔹 HEADER */}
       <div className="header">
         <div className="brand">
-          <div className="logo-box">SP</div>
-          <span>SPARC Portal</span>
+          <div className="logo-wrapper">
+            <img src="/logo-sp.jpeg" className="logo-img" />
+          </div>
+          <span className="brand-title">SP Portal</span>
         </div>
 
         <div className="header-actions">
           <button onClick={() => router.push("/admin")} className="btn-outline">
-            Back
+            ← Back to Admin Home
           </button>
 
           <button onClick={() => router.push("/uploads")} className="btn-outline">
@@ -71,7 +93,6 @@ export default function Upload() {
         </div>
       </div>
 
-      {/* 🔹 CARD */}
       <div className="upload-card">
 
         <h2>Upload Files</h2>
@@ -83,10 +104,36 @@ export default function Upload() {
           ))}
         </select>
 
+        {/* 🔥 CATEGORY */}
         <select onChange={e => setCategory(e.target.value)}>
           <option value="daily-updates">Daily Updates</option>
           <option value="project-details">Project Details</option>
         </select>
+
+        {/* 🔥 PROJECT DETAILS EXTRA */}
+        {category === "project-details" && (
+          <>
+            <select onChange={e => setMainCategory(e.target.value)}>
+              <option value="">Select Section</option>
+              <option value="agreement">Agreement</option>
+              <option value="drawings">Drawings</option>
+            </select>
+
+            {mainCategory === "drawings" && (
+              <select onChange={e => setSubCategory(e.target.value)}>
+                <option value="">Select Drawing Type</option>
+
+                <option value="floor-plan">Floor Plan</option>
+                <option value="elevation">Elevation</option>
+                <option value="structural">Structural</option>
+                <option value="working">Working Drawings</option>
+                <option value="electrical">Electrical</option>
+                <option value="plumbing">Plumbing</option>
+                <option value="landscape">Landscape</option>
+              </select>
+            )}
+          </>
+        )}
 
         <input type="file" onChange={e => setFile(e.target.files[0])} />
 
@@ -95,7 +142,6 @@ export default function Upload() {
         </button>
 
       </div>
-
     </div>
   );
 }
