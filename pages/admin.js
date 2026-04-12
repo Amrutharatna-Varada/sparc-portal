@@ -26,6 +26,11 @@ export default function Admin() {
   return () => unsub();
 }, []);
 
+const logout = () => {
+    signOut(auth)
+    router.push("/login");
+  };
+
   return (
     <div className="admin-container">
 
@@ -37,7 +42,7 @@ export default function Admin() {
           <span className="brand-title">SP Portal</span>
         </div>
 
-        <button className="btn-outline" onClick={() => signOut(auth)}>
+        <button className="btn-outline" onClick={logout}>
           Logout
         </button>
       </div>

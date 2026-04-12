@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/router";
+import { Trash2 } from "lucide-react";
 
 export default function Uploads() {
     const [uploads, setUploads] = useState([]);
@@ -55,6 +56,12 @@ export default function Uploads() {
         if (!ts) return "";
         return new Date(ts.seconds * 1000).toLocaleString();
     };
+
+    const logout = () => {
+        signOut(auth)
+        router.push("/login");
+
+  };
 
     const getThumbnail = (u) => {
         if (u.fileType?.includes("image")) return u.fileUrl;
@@ -191,7 +198,7 @@ export default function Uploads() {
                         Upload
                     </button>
 
-                    <button className="btn danger" onClick={() => signOut(auth)}>
+                    <button className="btn danger" onClick={logout}>
                         Logout
                     </button>
                 </div>
@@ -378,7 +385,7 @@ export default function Uploads() {
                                     handleDelete(u.id);
                                 }}
                             >
-                                🗑
+                                <Trash2 size={16} />
                             </button>
                         </div>
                     </div>

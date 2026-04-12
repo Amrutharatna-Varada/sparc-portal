@@ -35,7 +35,10 @@ export default function ProjectDetails() {
     setFiles(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   };
 
-  const logout = () => signOut(auth);
+  const logout = () => {
+    signOut(auth)
+    router.push("/login");
+  };
 
   // 🔥 FILTER DATA
   const agreementFiles = files.filter(f => f.mainCategory === "agreement");

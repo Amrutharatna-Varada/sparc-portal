@@ -17,6 +17,11 @@ export default function ClientHome() {
     setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   };
 
+  const logout = () => {
+    signOut(auth)
+    router.push("/login");
+  };
+
   return (
     <div>
 
@@ -34,7 +39,7 @@ export default function ClientHome() {
             Back to Admin Home
           </button>
 
-          <button className="btn" onClick={() => signOut(auth)}>
+          <button className="btn" onClick={logout}>
             Logout
           </button>
         </div>
