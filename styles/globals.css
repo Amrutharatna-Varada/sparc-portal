@@ -1696,3 +1696,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
   cursor: pointer;
 }
+
+.date-divider {
+  color: #aaa;
+  font-size: 14px;
+  font-weight: 600;
+
+  margin: 20px 0 12px;
+
+  padding-left: 4px;
+}
