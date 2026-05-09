@@ -94,27 +94,38 @@ export default function ProjectDashboard() {
     );
   };
 
-  // 🔥 GROUPING LOGIC (NEW)
   const groupFiles = () => {
-    const groups = {};
+    const monthGroups = {};
 
     files.forEach((file) => {
       if (!file.createdAt) return;
 
       const date = new Date(file.createdAt.seconds * 1000);
 
-      const key = date.toLocaleDateString("en-IN", {
-        day: "numeric",
+      // 🔥 Month label
+      const monthKey = date.toLocaleString("default", {
         month: "long",
-        year: "numeric"
+        year: "numeric",
       });
 
-      if (!groups[key]) groups[key] = [];
+      // 🔥 Day label
+      const dayKey = date.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+      });
 
-      groups[key].push(file);
+      if (!monthGroups[monthKey]) {
+        monthGroups[monthKey] = {};
+      }
+
+      if (!monthGroups[monthKey][dayKey]) {
+        monthGroups[monthKey][dayKey] = [];
+      }
+
+      monthGroups[monthKey][dayKey].push(file);
     });
 
-    return groups;
+    return monthGroups;
   };
 
   const groupedFiles = groupFiles();
@@ -183,34 +194,49 @@ export default function ProjectDashboard() {
         </div>
       )}
 
-      {/* 🔥 GROUPED GRID */}
-      {Object.entries(groupedFiles).map(([label, items]) => (
-        <div key={label}>
+      {Object.entries(groupedFiles).map(([month, days]) => (
+        <div key={month}>
 
-          {/* 🔥 STICKY HEADER */}
-          <div className="sticky-header">{label}</div>
-
-          <div className="grid">
-            {items.map((item) => {
-              const index = files.indexOf(item);
-              const isVideo = item.fileUrl?.includes(".mp4");
-
-              return (
-                <div
-                  key={item.id}
-                  className="card"
-                  onClick={() => setSelectedIndex(index)}
-                >
-                  {isVideo ? (
-                    <video src={item.fileUrl} />
-                  ) : (
-                    <img src={item.fileUrl} loading="lazy" />
-                  )}
-                </div>
-              );
-            })}
+          {/* 🔥 MONTH HEADER */}
+          <div className="sticky-header">
+            {month}
           </div>
 
+          {/* 🔥 DAYS */}
+          {Object.entries(days).map(([day, items]) => (
+            <div key={day}>
+
+              {/* 🔥 DATE LABEL */}
+              <div className="date-divider">
+                {day}
+              </div>
+
+              <div className="grid">
+                {items.map((item) => {
+                  const index = files.indexOf(item);
+                  const isVideo = item.fileUrl?.includes(".mp4");
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="card"
+                      onClick={() => setSelectedIndex(index)}
+                    >
+                      {isVideo ? (
+                        <video src={item.fileUrl} />
+                      ) : (
+                        <img
+                          src={item.fileUrl}
+                          loading="lazy"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          ))}
         </div>
       ))}
 
