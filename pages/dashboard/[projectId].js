@@ -57,7 +57,7 @@ export default function ProjectDashboard() {
     if (!projectId) return;
 
     const fetchData = async () => {
-        setLoading(true)
+      setLoading(true)
       const q = query(
         collection(db, "updates"),
         where("projectId", "==", projectId),
@@ -96,25 +96,26 @@ export default function ProjectDashboard() {
 
   // 🔥 GROUPING LOGIC (NEW)
   const groupFiles = () => {
-  const groups = {};
+    const groups = {};
 
-  files.forEach((file) => {
-    if (!file.createdAt) return;
+    files.forEach((file) => {
+      if (!file.createdAt) return;
 
-    const date = new Date(file.createdAt.seconds * 1000);
+      const date = new Date(file.createdAt.seconds * 1000);
 
-    const key = date.toLocaleString("default", {
-      month: "long",
-      year: "numeric"
+      const key = date.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      });
+
+      if (!groups[key]) groups[key] = [];
+
+      groups[key].push(file);
     });
 
-    if (!groups[key]) groups[key] = [];
-
-    groups[key].push(file);
-  });
-
-  return groups;
-};
+    return groups;
+  };
 
   const groupedFiles = groupFiles();
 
@@ -175,12 +176,12 @@ export default function ProjectDashboard() {
       <h2 className="title">{projectId} Updates</h2>
 
       {loading && (
-  <div className="dashboard-grid">
-    {[...Array(8)].map((_, i) => (
-      <div key={i} className="skeleton-card" />
-    ))}
-  </div>
-)}
+        <div className="dashboard-grid">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="skeleton-card" />
+          ))}
+        </div>
+      )}
 
       {/* 🔥 GROUPED GRID */}
       {Object.entries(groupedFiles).map(([label, items]) => (
@@ -214,12 +215,12 @@ export default function ProjectDashboard() {
       ))}
 
       {!loading && files.length === 0 && (
-  <div className="empty-state">
-    <div className="empty-icon">📁</div>
-    <h3>No updates yet</h3>
-    <p>Project updates will appear here once uploaded</p>
-  </div>
-)}
+        <div className="empty-state">
+          <div className="empty-icon">📁</div>
+          <h3>No updates yet</h3>
+          <p>Project updates will appear here once uploaded</p>
+        </div>
+      )}
 
       {/* MODAL (UNCHANGED) */}
       {selectedIndex !== null && files[selectedIndex] && (
